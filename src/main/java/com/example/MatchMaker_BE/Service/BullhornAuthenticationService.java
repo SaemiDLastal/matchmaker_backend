@@ -1,8 +1,5 @@
 package com.example.MatchMaker_BE.Service;
 
-import com.github.scribejava.apis.GenericApi20;
-import com.github.scribejava.core.builder.ServiceBuilder;
-import com.github.scribejava.core.oauth.OAuth20Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,40 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-@Configuration
-public class BullhornAuthenticationService {
-   @Value("${oauth2.clientId}")
-   private String clientId;
-
-    @Value("${oauth2.clientSecret}")
-    private String clientSecret;
-
-    @Value("${oauth2.authorizationUrl}")
-    private String authorizationUrl;
-
-    @Value("${oauth2.accessTokenUrl}")
-    private String accessTokenUrl;
-
-    @Value("${oauth2.callbackUrl}")
-    private String callbackUrl;
-
-    @Bean
-    public OAuth20Service getOAuth20Service() {
-        return new ServiceBuilder(clientId)
-                .apiSecret(clientSecret)
-                .defaultScope("openid")
-                .callback(callbackUrl)
-                .build(GenericApi20.instance());
-    }
-
-}
-
-/*@Service
+@Service
 public class BullhornAuthenticationService {
     @Autowired
     private RestTemplate restTemplate;
@@ -67,5 +40,5 @@ public class BullhornAuthenticationService {
             return null; // Handle error condition appropriately
         }
     }
-}*/
+}
 

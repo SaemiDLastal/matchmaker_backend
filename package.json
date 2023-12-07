@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "client-oauth2": "^4.3.3"
+    "client-oauth2": "^4.3.3",
+    "maven": "^5.0.0"
   }
 }
