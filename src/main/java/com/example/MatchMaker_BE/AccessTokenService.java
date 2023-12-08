@@ -23,14 +23,14 @@ public class AccessTokenService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Bean
-    @PostMapping("/getAccessToken")
+    @PostMapping("/")
     public String getAccessToken() {
-        /*
-        String accessToken = restTemplate.getForObject(
+        String accessToken = "test";
+        /*String accessToken = restTemplate.getForObject(
                 authURI + "?client_id=" + clientID + "&response_type=code&action=Login&username=" + username + "&password=" + password, //API Url zusammensetzen
                 String.class
         );*/
-        String accessToken = "test";
+
         System.out.println("accessToken: " + accessToken);
         return accessToken;
     }
