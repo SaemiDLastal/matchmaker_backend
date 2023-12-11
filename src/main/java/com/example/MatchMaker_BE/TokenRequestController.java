@@ -1,6 +1,8 @@
 package com.example.MatchMaker_BE;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,7 +15,7 @@ public class TokenRequestController {
     @Autowired
     AccessTokenService service;
 
-    @RequestMapping("/accessToken")
+    @RequestMapping("/match")
     @ResponseBody
     public String getAccessToken() {
         String accessToken = service.getAccessToken();
