@@ -23,7 +23,7 @@ public class AccessTokenService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Bean
-    @PostMapping("/")
+    @PostMapping("/match")
     public String getAccessToken() {
         String accessToken = "test";
         /*String accessToken = restTemplate.getForObject(
