@@ -1,10 +1,14 @@
 package com.example.MatchMaker_BE;
 
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.coyote.Response;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -18,14 +22,15 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 @Service
 public class AccessTokenService {
 
     /*@Value("${authorization-uri}")*/
-    private String authURI = "https://auth-ger.bullhornstaffing.com/oauth/authorize";
+    private final String authURI = "https://auth-ger.bullhornstaffing.com/oauth/authorize";
 
-    private String accessURI = "https://auth-ger.bullhornstaffing.com/oauth/token";
+    private final String accessURI = "https://auth-ger.bullhornstaffing.com/oauth/token";
 
     @Value("${client-id}")
     private String clientID;
@@ -37,10 +42,8 @@ public class AccessTokenService {
 
     private final String password = System.getenv("API_PASSWORD");
 
-    private final RestTemplate restTemplate = new RestTemplate();
-
     @Bean
-    @PostMapping("/match")
+    @RequestMapping("/match")
     public String getAccessToken() {
 
         RestTemplate restTemplate = new RestTemplate(getCustomHttpRequestFactory());
@@ -57,22 +60,25 @@ public class AccessTokenService {
             System.out.println("Authorization code: " + authorizationCode);
 
             // Get the access token
+            /*
             RestTemplate restTemplate2 = new RestTemplate(getCustomHttpRequestFactory());
             String fullAccessURL = accessURI + "?grant_type=authorization_code&code=" + authorizationCode + "&client_id=" + clientID + "&client_secret=" + clientSecret;
             System.out.println("Full access URL: " + fullAccessURL);
             ResponseEntity<String> responseEntity2 = restTemplate2.postForEntity(fullAccessURL, null, String.class);
             String accessToken = responseEntity2.getBody();
             System.out.println("Access token: " + accessToken);
- /*
-            RestTemplate restTemplate2 = new RestTemplate(getCustomHttpRequestFactory());
+ */
+            RestTemplate restTemplate2 = new RestTemplate();
             String fullAccessURL = accessURI + "?grant_type=authorization_code&code=" + authorizationCode + "&client_id=" + clientID + "&client_secret=" + clientSecret;
             System.out.println("Full access URL: " + fullAccessURL);
             HttpHeaders headers = new HttpHeaders();
+                headers.set("Content-Type", "application/json");
             HttpEntity<String> entity = new HttpEntity<String>(headers);
             ResponseEntity<String> responseEntity2 = restTemplate2.exchange(fullAccessURL, HttpMethod.POST, entity, String.class);
+            System.out.println("Response: " + responseEntity2);
             String accessToken = responseEntity2.getBody();
             System.out.println("Access token: " + accessToken);
-*/
+
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
