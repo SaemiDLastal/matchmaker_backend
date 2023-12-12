@@ -18,7 +18,7 @@ public class TokenRequestController {
     @RequestMapping("/match")
     @ResponseBody
     public String getAccessToken() {
-        String accessToken = service.getAccessToken();
+        String accessToken = service.getAuthCode();
         return accessToken;
     }
 }

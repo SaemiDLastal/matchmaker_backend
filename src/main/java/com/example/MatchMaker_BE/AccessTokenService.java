@@ -1,28 +1,16 @@
 package com.example.MatchMaker_BE;
 
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import org.apache.coyote.Response;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 
 @Service
 public class AccessTokenService {
@@ -31,6 +19,8 @@ public class AccessTokenService {
     private final String authURI = "https://auth-ger.bullhornstaffing.com/oauth/authorize";
 
     private final String accessURI = "https://auth-ger.bullhornstaffing.com/oauth/token";
+
+    private String authorizationCode;
 
     @Value("${client-id}")
     private String clientID;
@@ -44,7 +34,7 @@ public class AccessTokenService {
 
     @Bean
     @RequestMapping("/match")
-    public String getAccessToken() {
+    public String getAuthCode() {
 
         RestTemplate restTemplate = new RestTemplate(getCustomHttpRequestFactory());
         try {
@@ -59,31 +49,34 @@ public class AccessTokenService {
             String authorizationCode = responseUrlParts2[0];
             System.out.println("Authorization code: " + authorizationCode);
 
-            // Get the access token
-            /*
-            RestTemplate restTemplate2 = new RestTemplate(getCustomHttpRequestFactory());
-            String fullAccessURL = accessURI + "?grant_type=authorization_code&code=" + authorizationCode + "&client_id=" + clientID + "&client_secret=" + clientSecret;
-            System.out.println("Full access URL: " + fullAccessURL);
-            ResponseEntity<String> responseEntity2 = restTemplate2.postForEntity(fullAccessURL, null, String.class);
-            String accessToken = responseEntity2.getBody();
-            System.out.println("Access token: " + accessToken);
- */
+            return getAccessToken(authorizationCode);
+
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public String getAccessToken(String authorizationCode) {
+
+        try {
             RestTemplate restTemplate2 = new RestTemplate();
             String fullAccessURL = accessURI + "?grant_type=authorization_code&code=" + authorizationCode + "&client_id=" + clientID + "&client_secret=" + clientSecret;
             System.out.println("Full access URL: " + fullAccessURL);
             HttpHeaders headers = new HttpHeaders();
-                headers.set("Content-Type", "application/json");
+            headers.add("Content-Type", "application/json");
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             HttpEntity<String> entity = new HttpEntity<String>(headers);
             ResponseEntity<String> responseEntity2 = restTemplate2.exchange(fullAccessURL, HttpMethod.POST, entity, String.class);
             System.out.println("Response: " + responseEntity2);
             String accessToken = responseEntity2.getBody();
             System.out.println("Access token: " + accessToken);
 
+            return accessToken;
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
+            return null;
         }
-
-        return "Lets go";
     }
 
     private static ClientHttpRequestFactory getCustomHttpRequestFactory() {
