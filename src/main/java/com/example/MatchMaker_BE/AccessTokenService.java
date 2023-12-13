@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.http.HttpRequest;
 
-@Service
+
 public class AccessTokenService {
 
     private String matchID = "3680";
@@ -44,9 +44,10 @@ public class AccessTokenService {
 
     private final String password = System.getenv("API_PASSWORD");
 
-    @Bean //Das hier rausnehmen, wenn Methode nur bei Aufruf durch Frontend aufgerufen werden soll
-    public List<String> getMatchData() {
+    //@Bean //Das hier rausnehmen, wenn Methode nur bei Aufruf durch Frontend aufgerufen werden soll
+    public List<String> getMatchData(String localMatchID) {
 
+        this.matchID = localMatchID;
         //Authentifizierung
         String bhRestToken = getBhRestToken(getAccessToken(getAuthCode()));
         List<String> placementData = getPlacementData(bhRestToken);

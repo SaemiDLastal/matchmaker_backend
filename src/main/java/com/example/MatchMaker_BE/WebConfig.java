@@ -12,23 +12,23 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
-
-
-    /*@Override
+    @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedMethods("*")
-                .allowedOrigins("https://localhost:8080/")
+                .allowedOrigins("*")
                 .allowedHeaders("*");
-    }*/
+    }
 
+/*
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
         // Erlaube Anfragen von allen Ursprüngen
-        config.addAllowedOrigin("*");
+        config.addAllowedOrigin("https://localhost:8080");
+        config.addAllowedOrigin("https://localhost:8081");
 
         // Erlaube bestimmte HTTP-Methoden (GET, POST, etc.)
         config.addAllowedMethod("*");
@@ -39,5 +39,5 @@ public class WebConfig implements WebMvcConfigurer {
         source.registerCorsConfiguration("/**", config);
 
         return new CorsFilter(source);
-    }
+    }*/
 }
