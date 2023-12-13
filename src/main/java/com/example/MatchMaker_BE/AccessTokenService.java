@@ -12,9 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.http.HttpRequest;
 
 @Service
 public class AccessTokenService {
@@ -42,10 +46,10 @@ public class AccessTokenService {
     public List<String> getMatchData() {
 
         //Authentifizierung
-        //String bhRestToken = getBhRestToken(getAccessToken(getAuthCode()));
+        String bhRestToken = getBhRestToken(getAccessToken(getAuthCode()));
         getAccessToken(getAuthCode());
 
-        //List<String> placementData = getPlacementData(bhRestToken);
+        List<String> placementData = getPlacementData(bhRestToken);
 
 
         return List.of("test1", "test2", "test3");
@@ -74,24 +78,22 @@ public class AccessTokenService {
             return null;
         }
     }
-
-    public String getAccessToken(String authorizationCode) {
-
+    public String getAccessToken(String authorizationCode){
         try {
-            RestTemplate restTemplate = new RestTemplate();
             String fullAccessURL = accessURI + "?grant_type=authorization_code&code=" + authorizationCode + "&client_id=" + clientID + "&client_secret=" + clientSecret;
-            System.out.println("Full access URL: " + fullAccessURL);
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Type", "application/json");
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            HttpEntity<String> entity = new HttpEntity<String>(headers);
-            ResponseEntity<String> responseEntity = restTemplate.exchange(fullAccessURL, HttpMethod.POST, entity, String.class);
-            System.out.println("Response: " + responseEntity);
-            String accessToken = extractValueFromJson(responseEntity.getBody(), "access_token");
-            System.out.println("Access token: " + accessToken);
 
-            return accessToken;
-        } catch (Exception e) {
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(fullAccessURL)).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.noBody()).build();
+            HttpClient httpClient = HttpClient.newHttpClient();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                String accessToken = extractValueFromJson(response.body(), "access_token");
+                System.out.println("Access token: " + accessToken);
+                return accessToken;
+            } else {
+                System.out.println("Error: " + response.statusCode() + ", " + response.body());
+                return null;
+            }
+        } catch(Exception e) {
             System.out.println("Error: " + e.getMessage());
             return null;
         }
