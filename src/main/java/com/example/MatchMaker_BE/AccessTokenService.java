@@ -23,6 +23,8 @@ import java.net.http.HttpRequest;
 @Service
 public class AccessTokenService {
 
+    private String matchID = "3680";
+
     /*@Value("${authorization-uri}")*/
     private final String authURI = "https://auth-ger.bullhornstaffing.com/oauth/authorize";
 
@@ -47,8 +49,6 @@ public class AccessTokenService {
 
         //Authentifizierung
         String bhRestToken = getBhRestToken(getAccessToken(getAuthCode()));
-        getAccessToken(getAuthCode());
-
         List<String> placementData = getPlacementData(bhRestToken);
 
 
@@ -116,11 +116,13 @@ public class AccessTokenService {
     public List<String> getPlacementData(String bhRestToken) {
 
             RestTemplate restTemplate = new RestTemplate();
-            String fullPlacementURL = "https://rest-ger.bullhornstaffing.com/rest-services/Placement/Placement?BhRestToken=" + bhRestToken + "&fields=candidate(id(customText5),firstName,lastName),correlatedCustomText1,customText18,salaryUnit,payRate,clientBillRate,customTextBlock2,owner,dateBegin,dateEnd,jobOrder(clientCorporation(name,address))";
+            String fullPlacementURL = "https://rest70.bullhornstaffing.com/rest-services/8WY9C4/entity/Placement/" + matchID + "?BhRestToken=" + bhRestToken + "&fields=candidate(id(customText5),firstName,lastName),correlatedCustomText1,customText18,salaryUnit,payRate,clientBillRate,customTextBlock2,owner,dateBegin,dateEnd,jobOrder(clientCorporation(name,address))";
             System.out.println("Full placement URL: " + fullPlacementURL);
             ResponseEntity<String> responseEntity = restTemplate.getForEntity(fullPlacementURL, String.class);
             System.out.println("Response: " + responseEntity);
-            String candidateFirstName = extractValueFromJson(responseEntity.getBody(), "firstName");
+
+            String candidateFirstName = extractValueFromJson(responseEntity.getBody(), "candidate(firstName)");
+        System.out.println("Candidate first name: " + candidateFirstName);
             String candidatelastName = extractValueFromJson(responseEntity.getBody(), "lastName");
             String candidateGesellschaft = extractValueFromJson(responseEntity.getBody(), "customText5");
             String zahlungszielPP = extractValueFromJson(responseEntity.getBody(), "correlatedCustomText1");
@@ -136,7 +138,6 @@ public class AccessTokenService {
             String ppPosition = extractValueFromJson(responseEntity.getBody(), "jobOrder(title)");
             String corporateName = extractValueFromJson(responseEntity.getBody(), "jobOrder(clientCorporation(name))");
             String corporateAddress = extractValueFromJson(responseEntity.getBody(), "jobOrder(clientCorporation(address))");
-
             return List.of("test1", "test2", "test3");
     }
 
@@ -165,13 +166,13 @@ public class AccessTokenService {
             if(fieldValue != null && !fieldValue.isNull()) {
                 return fieldValue.asText();
             } else {
-                return "Wert nicht gefunden";
+              //  return "Wert nicht gefunden";
             }
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
             return "Fehler beim Parsen der JSON";
         }
-
+    return "Fehler in extractValueFromJson";
     }
 }
