@@ -10,8 +10,7 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -23,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.http.HttpRequest;
 
 @RestController
+@CrossOrigin
 public class TokenRequestController {
 
     private String matchID = "3680";
@@ -36,22 +36,22 @@ public class TokenRequestController {
 
     private String authorizationCode;
 
-    @Value("${client-id}")
-    private String clientID;
+    private final String clientID = System.getenv("CLIENT_ID");
 
-    @Value("${client-secret}")
-    private String clientSecret;
+    //@Value("${client-secret}")
+    private final String clientSecret = System.getenv("CLIENT_SECRET");
 
     private final String username = System.getenv("API_USERNAME");
 
     private final String password = System.getenv("API_PASSWORD");
 
     //@Bean //Das hier rausnehmen, wenn Methode nur bei Aufruf durch Frontend aufgerufen werden soll
-    @RequestMapping("/match")
-    public List<String> getMatchData(String localMatchID) {
+    @GetMapping("/match/{localMatchID}")
+    public List<String> getMatchData(@PathVariable String localMatchID) {
 
         this.matchID = localMatchID;
-        //Authentifizierung
+
+        // API-Authentifizierung
         String bhRestToken = getBhRestToken(getAccessToken(getAuthCode()));
         List<String> placementData = getPlacementData(bhRestToken);
 
