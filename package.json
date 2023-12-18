@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "client-oauth2": "^4.3.3",
+    "cors": "^2.8.5",
     "maven": "^5.0.0",
     "node-jpa": "^1.0.9"
   }

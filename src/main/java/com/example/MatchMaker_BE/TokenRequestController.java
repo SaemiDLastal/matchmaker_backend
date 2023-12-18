@@ -2,14 +2,10 @@ package com.example.MatchMaker_BE;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.coyote.Response;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
+import com.nimbusds.jose.shaded.gson.Gson;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Controller;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,7 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.http.HttpRequest;
 
 @RestController
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:8080")
 public class TokenRequestController {
 
     private String matchID = "3680";
@@ -47,16 +43,16 @@ public class TokenRequestController {
 
     //@Bean //Das hier rausnehmen, wenn Methode nur bei Aufruf durch Frontend aufgerufen werden soll
     @GetMapping("/match/{localMatchID}")
-    public List<String> getMatchData(@PathVariable String localMatchID) {
+    public String getMatchData(@PathVariable String localMatchID) {
 
         this.matchID = localMatchID;
 
         // API-Authentifizierung
         String bhRestToken = getBhRestToken(getAccessToken(getAuthCode()));
         List<String> placementData = getPlacementData(bhRestToken);
+        System.out.println("PlacementData: " + placementData);
 
-
-        return List.of("test1", "test2", "test3");
+        return new Gson().toJson(placementData);
     }
 
     // ------- API Authorisierung -------
@@ -117,6 +113,7 @@ public class TokenRequestController {
 
     // ------- Datenabfragen -------
 
+
     public List<String> getPlacementData(String bhRestToken) {
 
         RestTemplate restTemplate = new RestTemplate();
@@ -125,24 +122,40 @@ public class TokenRequestController {
         ResponseEntity<String> responseEntity = restTemplate.getForEntity(fullPlacementURL, String.class);
         System.out.println("Response: " + responseEntity);
 
-        String candidateFirstName = extractValueFromJson(responseEntity.getBody(), "candidate(firstName)");
-        System.out.println("Candidate first name: " + candidateFirstName);
-        String candidatelastName = extractValueFromJson(responseEntity.getBody(), "lastName");
-        String candidateGesellschaft = extractValueFromJson(responseEntity.getBody(), "customText5");
-        String zahlungszielPP = extractValueFromJson(responseEntity.getBody(), "correlatedCustomText1");
-        String zahlungszielKunde = extractValueFromJson(responseEntity.getBody(), "customText18");
-        String vergutungsart = extractValueFromJson(responseEntity.getBody(), "salaryUnit");
-        String ek = extractValueFromJson(responseEntity.getBody(), "payRate");
-        String vk = extractValueFromJson(responseEntity.getBody(), "clientBillRate");
-        String aufgabenbeschreibung = extractValueFromJson(responseEntity.getBody(), "customTextBlock2");
-        String ownerFirstName = extractValueFromJson(responseEntity.getBody(), "owner(firstName)");
-        String ownerLastName = extractValueFromJson(responseEntity.getBody(), "owner(lastName)");
-        String dateBegin = extractValueFromJson(responseEntity.getBody(), "dateBegin");
-        String dateEnd = extractValueFromJson(responseEntity.getBody(), "dateEnd");
-        String ppPosition = extractValueFromJson(responseEntity.getBody(), "jobOrder(title)");
-        String corporateName = extractValueFromJson(responseEntity.getBody(), "jobOrder(clientCorporation(name))");
-        String corporateAddress = extractValueFromJson(responseEntity.getBody(), "jobOrder(clientCorporation(address))");
-        return List.of("test1", "test2", "test3");
+        String candidateFirstName = extractCandidate(responseEntity.getBody(), "firstName");
+        ;
+        String candidatelastName = extractCandidate(responseEntity.getBody(), "lastName");
+
+        String candidateGesellschaft = extractCompany(responseEntity.getBody(), "name");
+
+        String zahlungszielPP = extractallOtherData(responseEntity.getBody(), "correlatedCustomText1");
+
+        String zahlungszielKunde = extractallOtherData(responseEntity.getBody(), "customText18");
+
+        String vergutungsart = extractallOtherData(responseEntity.getBody(), "salaryUnit");
+
+        String ek = extractallOtherData(responseEntity.getBody(), "payRate");
+
+        String vk = extractallOtherData(responseEntity.getBody(), "clientBillRate");
+
+        String aufgabenbeschreibung = extractallOtherData(responseEntity.getBody(), "customTextBlock2");
+
+        String ownerFirstName = extractOwner(responseEntity.getBody(), "firstName");
+
+        String ownerLastName = extractOwner(responseEntity.getBody(), "lastName");
+
+        String dateBegin = extractallOtherData(responseEntity.getBody(), "dateBegin");
+
+        String dateEnd = extractallOtherData(responseEntity.getBody(), "dateEnd");
+
+        String ppPosition = extractJobOrderTitle(responseEntity.getBody(), "title");
+
+        String corporateName = extractCompany(responseEntity.getBody(), "name");
+
+        String corporateAddress = extractCompany(responseEntity.getBody(), "address");
+        System.out.println("corporateAddress: " + corporateAddress.toString());
+
+        return List.of(candidateFirstName, candidatelastName, candidateGesellschaft, zahlungszielPP, zahlungszielKunde, vergutungsart, ek, vk, aufgabenbeschreibung, ownerFirstName, ownerLastName, dateBegin, dateEnd, ppPosition, corporateName, corporateAddress.toString());
     }
 
 
@@ -178,5 +191,97 @@ public class TokenRequestController {
             return "Fehler beim Parsen der JSON";
         }
         return "Fehler in extractValueFromJson";
+    }
+
+    public static String extractCandidate(String JsonResponse, String fieldName) {
+        try {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(JsonResponse);
+
+        JsonNode valueNode = jsonNode.path("data").path("candidate").path(fieldName);
+        if (valueNode.isMissingNode()) {
+            // Hier kannst du entscheiden, wie du mit dem Fehlen des Feldes umgehen möchtest
+            return null;
+        }
+
+        return valueNode.asText();
+        } catch (Exception e) {
+            e.printStackTrace(); // Hier kannst du die Exception-Verarbeitung entsprechend deinen Anforderungen anpassen
+            return null;
+        }
+    }
+    public static String extractCompany(String JsonResponse, String fieldName) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(JsonResponse);
+
+            JsonNode valueNode = jsonNode.path("data").path("jobOrder").path("clientCorporation").path(fieldName);
+            if (valueNode.isMissingNode()) {
+                return null;
+            }
+            return valueNode.asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+
+    public String extractallOtherData(String JsonResponse, String fieldName) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(JsonResponse);
+
+            JsonNode valueNode = jsonNode.path("data").path(fieldName);
+            if (valueNode.isMissingNode()) {
+
+                return null;
+            }
+
+            return valueNode.asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+    public String extractOwner(String JsonResponse, String fieldName) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(JsonResponse);
+
+            JsonNode valueNode = jsonNode.path("data").path("owner").path(fieldName);
+            if (valueNode.isMissingNode()) {
+
+                return null;
+            }
+
+            return valueNode.asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+    public String extractJobOrderTitle(String JsonResponse, String fieldName) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(JsonResponse);
+
+            JsonNode valueNode = jsonNode.path("data").path("jobOrder").path(fieldName);
+            if (valueNode.isMissingNode()) {
+
+                return null;
+            }
+
+            return valueNode.asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
     }
 }
