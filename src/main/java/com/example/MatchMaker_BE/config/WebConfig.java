@@ -1,4 +1,4 @@
-//
+
 package com.example.MatchMaker_BE.config;
 
 import jakarta.servlet.FilterRegistration;
@@ -29,6 +29,25 @@ import java.util.List;
 @EnableWebSecurity
 @CrossOrigin(origins = "*",  allowedHeaders = "*")
 public class WebConfig implements WebMvcConfigurer {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors().and()
+                .authorizeRequests()
+                    .requestMatchers("/match/**").permitAll()
+                    .anyRequest().authenticated()
+                    .and()
+                .formLogin()
+                    .loginPage("/login")
+                    .loginProcessingUrl("/login")
+                    .permitAll()
+                    .and()
+                .logout()
+                    .permitAll();
+
+        return http.build();
+    }
 
     /*@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
