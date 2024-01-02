@@ -22,7 +22,7 @@ import java.net.http.HttpRequest;
 @CrossOrigin(origins = "http://localhost:8080")
 public class TokenRequestController {
 
-    private String matchID = "3680";
+    private String matchID;
 
     /*@Value("${authorization-uri}")*/
     private final String authURI = "https://auth-ger.bullhornstaffing.com/oauth/authorize";
@@ -114,7 +114,7 @@ public class TokenRequestController {
 
     // ------- Datenabfragen -------
 
-
+//TODO Ansprechpartner Kunde, Owner Email, Candidate Email, Kündigungsfrist, Einsatzort (Remote/On-site) fehlen noch
     public List<String> getPlacementData(String bhRestToken) {
 
         RestTemplate restTemplate = new RestTemplate();
@@ -124,7 +124,7 @@ public class TokenRequestController {
         System.out.println("Response: " + responseEntity);
 
         String candidateFirstName = extractCandidate(responseEntity.getBody(), "firstName");
-        ;
+
         String candidatelastName = extractCandidate(responseEntity.getBody(), "lastName");
 
         String candidateGesellschaft = extractCompany(responseEntity.getBody(), "name");

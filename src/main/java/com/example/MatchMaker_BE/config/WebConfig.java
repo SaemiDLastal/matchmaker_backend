@@ -39,8 +39,6 @@ public class WebConfig implements WebMvcConfigurer {
                     .anyRequest().authenticated()
                     .and()
                 .formLogin()
-                    .loginPage("/login")
-                    .loginProcessingUrl("/login")
                     .permitAll()
                     .and()
                 .logout()
@@ -48,25 +46,6 @@ public class WebConfig implements WebMvcConfigurer {
 
         return http.build();
     }
-
-    /*@Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(authz -> authz
-                .requestMatchers("/match").permitAll()
-                .requestMatchers(optionsMatcher()).permitAll()
-                .anyRequest().authenticated()
-        );
-
-        CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of("*"));
-        cors.setAllowedHeaders(List.of("*"));
-        cors.setAllowCredentials(false);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", cors);
-        http.csrf().disable();
-        http.cors();
-        return http.build();
-    }*/
 
     @Bean
     public RequestMatcher optionsMatcher() {
