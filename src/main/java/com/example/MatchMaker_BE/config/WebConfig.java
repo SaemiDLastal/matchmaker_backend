@@ -39,6 +39,8 @@ public class WebConfig implements WebMvcConfigurer {
                     .anyRequest().authenticated()
                     .and()
                 .formLogin()
+                    //.loginPage("/login")
+                    //.loginProcessingUrl("/login")
                     .permitAll()
                     .and()
                 .logout()

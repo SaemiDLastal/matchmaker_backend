@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/private")
+@RequestMapping("private")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class PrivateEndpoint {
 
@@ -27,13 +27,13 @@ public class PrivateEndpoint {
     @Autowired
     ModelMapper modelMapper;
 
-    @GetMapping("/user-details")
+    @GetMapping("user-details")
     public ResponseEntity<?> getUserInfo(@AuthenticationPrincipal UserDto userDto) {
         User user = userService.getUser(userDto.getEmail());
         return ResponseEntity.ok(user);
     }
 
-    @GetMapping("/saveUser")
+    @GetMapping("saveUser")
     public ResponseEntity<UserDto> saveUserInfo(@AuthenticationPrincipal UserDto userDto) {
         userService.saveUser(userDto);
         return ResponseEntity.ok(userDto);

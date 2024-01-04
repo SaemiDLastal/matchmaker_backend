@@ -3,6 +3,9 @@ package com.example.MatchMaker_BE;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.shaded.gson.Gson;
+import jakarta.servlet.ServletOutputStream;
+import org.hibernate.event.spi.SaveOrUpdateEvent;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -13,6 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+import java.sql.SQLOutput;
 import java.util.*;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -33,14 +37,17 @@ public class TokenRequestController {
 
     private String authorizationCode;
 
-    private final String clientID = System.getenv("CLIENT_ID");
+    //private final String clientID = System.getenv("CLIENT_ID");
+    private final String clientID = "ac871643-a981-4e9a-a023-a11b8f1703a5";
 
-    //@Value("${client-secret}")
-    private final String clientSecret = System.getenv("CLIENT_SECRET");
+    //private final String clientSecret = System.getenv("CLIENT_SECRET");
+    private final String clientSecret = "nMAWJCqdFI864Sxa1dSxFri5";
 
-    private final String username = System.getenv("API_USERNAME");
+    //private final String username = System.getenv("API_USERNAME");
+    private final String username = "wematch.api";
 
-    private final String password = System.getenv("API_PASSWORD");
+    //private final String password = System.getenv("API_PASSWORD");
+    private final String password = "G1raffe030!WeMatch";
 
     //@Bean //Das hier rausnehmen, wenn Methode nur bei Aufruf durch Frontend aufgerufen werden soll
     @GetMapping("/match/{localMatchID}")
@@ -63,8 +70,10 @@ public class TokenRequestController {
         try {
             // Get the authorization code
             String fullAuthURL = authURI + "?client_id=" + clientID + "&response_type=code&action=Login&username=" + username + "&password=" + password;
+            System.out.println("Full auth URL: " + fullAuthURL);
             ResponseEntity<String> responseEntity = restTemplate.getForEntity(fullAuthURL, String.class);
             String responseUrl = responseEntity.getHeaders().getFirst("Location");
+            System.out.println("Response URL: " + responseUrl);
 
             // Splitting the responseURL to extract the authorization code
             String[] responseUrlParts = responseUrl.split("code=");
@@ -114,49 +123,68 @@ public class TokenRequestController {
 
     // ------- Datenabfragen -------
 
-//TODO Ansprechpartner Kunde, Owner Email, Candidate Email, Kündigungsfrist, Einsatzort (Remote/On-site) fehlen noch
+//TODO Ansprechpartner Kunde, Owner Email, Einsatzort (Remote/On-site) fehlen noch
     public List<String> getPlacementData(String bhRestToken) {
 
         RestTemplate restTemplate = new RestTemplate();
-        String fullPlacementURL = "https://rest70.bullhornstaffing.com/rest-services/8WY9C4/entity/Placement/" + matchID + "?BhRestToken=" + bhRestToken + "&fields=candidate(id(customText5),firstName,lastName),correlatedCustomText1,customText18,salaryUnit,payRate,clientBillRate,customTextBlock2,owner,dateBegin,dateEnd,jobOrder(clientCorporation(name,address))";
+        String fullPlacementURL = "https://rest70.bullhornstaffing.com/rest-services/8WY9C4/entity/Placement/" + matchID + "?BhRestToken=" + bhRestToken + "&fields=candidate(id(customText5),firstName,lastName,email),correlatedCustomText1,customText18,salaryUnit,payRate,clientBillRate,customTextBlock2,owner(email),dateBegin,dateEnd,customText17,correlatedCustomText4,jobOrder(clientCorporation(name,address(address1,address2,city,zip),customText12))";
         System.out.println("Full placement URL: " + fullPlacementURL);
         ResponseEntity<String> responseEntity = restTemplate.getForEntity(fullPlacementURL, String.class);
         System.out.println("Response: " + responseEntity);
 
+        // -- Daten aus JSON-Response extrahieren --
         String candidateFirstName = extractCandidate(responseEntity.getBody(), "firstName");
-
         String candidatelastName = extractCandidate(responseEntity.getBody(), "lastName");
-
-        String candidateGesellschaft = extractCompany(responseEntity.getBody(), "name");
-
+        String candidateGesellschaft = extractCandidate(responseEntity.getBody(), "customText5");
         String zahlungszielPP = extractallOtherData(responseEntity.getBody(), "correlatedCustomText1");
-
         String zahlungszielKunde = extractallOtherData(responseEntity.getBody(), "customText18");
-
         String vergutungsart = extractallOtherData(responseEntity.getBody(), "salaryUnit");
-
         String ek = extractallOtherData(responseEntity.getBody(), "payRate");
-
         String vk = extractallOtherData(responseEntity.getBody(), "clientBillRate");
-
         String aufgabenbeschreibung = extractallOtherData(responseEntity.getBody(), "customTextBlock2");
-
         String ownerFirstName = extractOwner(responseEntity.getBody(), "firstName");
-
         String ownerLastName = extractOwner(responseEntity.getBody(), "lastName");
-
         String dateBegin = extractallOtherData(responseEntity.getBody(), "dateBegin");
-
         String dateEnd = extractallOtherData(responseEntity.getBody(), "dateEnd");
-
         String ppPosition = extractJobOrderTitle(responseEntity.getBody(), "title");
-
         String corporateName = extractCompany(responseEntity.getBody(), "name");
+        String corporateAddressStreet = extractCompanyAddress(responseEntity.getBody(), "address1");
+        String corporateAddressNr = extractCompanyAddress(responseEntity.getBody(), "address2");
+        String corporateAddressCity = extractCompanyAddress(responseEntity.getBody(), "city");
+        String corporateAddressZip = extractCompanyAddress(responseEntity.getBody(), "zip");
+        String kundigungsfristPP = extractallOtherData(responseEntity.getBody(), "customText17");
+        String kundigungsfristKunde = extractCompany(responseEntity.getBody(), "customText12");
+        String einsatzort = extractallOtherData(responseEntity.getBody(), "correlatedCustomText4");
+        String candidateEmail = extractCandidate(responseEntity.getBody(), "email");
+        String ownerEmail = extractOwner(responseEntity.getBody(), "email");
 
-        String corporateAddress = extractCompany(responseEntity.getBody(), "address");
-        System.out.println("corporateAddress: " + corporateAddress.toString());
+        // -- Daten auf null überprüfen und ggf. mit leerem String ersetzen --
+         candidateFirstName = (candidateFirstName == null || candidateFirstName.equals("null") ? "" : candidateFirstName);
+         candidatelastName = (candidatelastName == null || candidatelastName.equals("null") ? "" : candidatelastName);
+         candidateGesellschaft = (candidateGesellschaft == null || candidateGesellschaft.equals("null") ? "" : candidateGesellschaft);
+         zahlungszielPP = (zahlungszielPP == null || zahlungszielPP.equals("null") ? "" : zahlungszielPP);
+         zahlungszielKunde =  (zahlungszielKunde == null || zahlungszielKunde.equals("null") ? "" : zahlungszielKunde);
+         vergutungsart = (vergutungsart == null || vergutungsart.equals("null") ? "" : vergutungsart);
+         ek = (ek == null || ek.equals("null") ? "" : ek);
+         vk = (vk == null || vk.equals("null") ? "" : vk);
+         aufgabenbeschreibung = (aufgabenbeschreibung == null || aufgabenbeschreibung.equals("null") ? "" : aufgabenbeschreibung);
+         ownerFirstName = (ownerFirstName == null || ownerFirstName.equals("null") ? "" : ownerFirstName);
+         ownerLastName = (ownerLastName == null || ownerLastName.equals("null") ? "" : ownerLastName);
+         dateBegin = (dateBegin == null || dateBegin.equals("null") ? "" : dateBegin);
+         dateEnd = (dateEnd == null || dateEnd.equals("null") ? "" : dateEnd);
+         ppPosition = (ppPosition == null || ppPosition.equals("null") ? "" : ppPosition);
+         corporateName = (corporateName == null || corporateName.equals("null") ? "" : corporateName);
+         corporateAddressStreet = (corporateAddressStreet == null || corporateAddressStreet.equals("null") ? "" : corporateAddressStreet);
+         corporateAddressNr = (corporateAddressNr == null || corporateAddressNr.equals("null") ? "" : corporateAddressNr);
+         corporateAddressCity = (corporateAddressCity == null || corporateAddressCity.equals("null") ? "" : corporateAddressCity);
+         corporateAddressZip = (corporateAddressZip == null || corporateAddressZip.equals("null") ? "" : corporateAddressZip);
+         kundigungsfristPP = (kundigungsfristPP == null || kundigungsfristPP.equals("null") ? "" : kundigungsfristPP);
+         kundigungsfristKunde = (kundigungsfristKunde == null || kundigungsfristKunde.equals("null") ? "" : kundigungsfristKunde);
+         einsatzort = (einsatzort == null || einsatzort.equals("null") ? "" : einsatzort);
+         candidateEmail = (candidateEmail == null || candidateEmail.equals("null") ? "" : candidateEmail);
+         ownerEmail = (ownerEmail == null || ownerEmail.equals("null") ? "" : ownerEmail);
 
-        return List.of(candidateFirstName, candidatelastName, candidateGesellschaft, zahlungszielPP, zahlungszielKunde, vergutungsart, ek, vk, aufgabenbeschreibung, ownerFirstName, ownerLastName, dateBegin, dateEnd, ppPosition, corporateName, corporateAddress.toString());
+        return List.of(candidateFirstName, candidatelastName, candidateGesellschaft, zahlungszielPP, zahlungszielKunde, vergutungsart, ek, vk, aufgabenbeschreibung, ownerFirstName, ownerLastName, dateBegin, dateEnd, ppPosition, corporateName, corporateAddressStreet, corporateAddressNr, corporateAddressCity, corporateAddressZip, kundigungsfristPP, kundigungsfristKunde, einsatzort, candidateEmail, ownerEmail);
     }
 
 
@@ -228,6 +256,23 @@ public class TokenRequestController {
 
     }
 
+    public static String extractCompanyAddress(String JsonResponse, String fieldName) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(JsonResponse);
+
+            JsonNode valueNode = jsonNode.path("data").path("jobOrder").path("clientCorporation").path("address").path(fieldName);
+            if (valueNode.isMissingNode()) {
+                return null;
+            }
+            return valueNode.asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
 
     public String extractallOtherData(String JsonResponse, String fieldName) {
         try {
@@ -236,7 +281,6 @@ public class TokenRequestController {
 
             JsonNode valueNode = jsonNode.path("data").path(fieldName);
             if (valueNode.isMissingNode()) {
-
                 return null;
             }
 
