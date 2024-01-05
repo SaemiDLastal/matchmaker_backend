@@ -123,11 +123,11 @@ public class TokenRequestController {
 
     // ------- Datenabfragen -------
 
-//TODO Ansprechpartner Kunde, Owner Email, Einsatzort (Remote/On-site) fehlen noch
+//TODO Ansprechpartner Kunde fehlt noch
     public List<String> getPlacementData(String bhRestToken) {
 
         RestTemplate restTemplate = new RestTemplate();
-        String fullPlacementURL = "https://rest70.bullhornstaffing.com/rest-services/8WY9C4/entity/Placement/" + matchID + "?BhRestToken=" + bhRestToken + "&fields=candidate(id(customText5),firstName,lastName,email),correlatedCustomText1,customText18,salaryUnit,payRate,clientBillRate,customTextBlock2,owner(email),dateBegin,dateEnd,customText17,correlatedCustomText4,jobOrder(clientCorporation(name,address(address1,address2,city,zip),customText12))";
+        String fullPlacementURL = "https://rest70.bullhornstaffing.com/rest-services/8WY9C4/entity/Placement/" + matchID + "?BhRestToken=" + bhRestToken + "&fields=candidate(id(customText5),firstName,lastName,email),correlatedCustomText1,customText18,salaryUnit,payRate,clientBillRate,customTextBlock2,owner(email),dateBegin,dateEnd,customText17,correlatedCustomText4,jobOrder(clientContact(firstName,lastName),clientCorporation(name,address(address1,address2,city,zip),customText12))";
         System.out.println("Full placement URL: " + fullPlacementURL);
         ResponseEntity<String> responseEntity = restTemplate.getForEntity(fullPlacementURL, String.class);
         System.out.println("Response: " + responseEntity);
@@ -157,6 +157,8 @@ public class TokenRequestController {
         String einsatzort = extractallOtherData(responseEntity.getBody(), "correlatedCustomText4");
         String candidateEmail = extractCandidate(responseEntity.getBody(), "email");
         String ownerEmail = extractOwner(responseEntity.getBody(), "email");
+        String clientContactFirstName = extractClientContact(responseEntity.getBody(), "firstName");
+        String clientContactLastName = extractClientContact(responseEntity.getBody(), "lastName");
 
         // -- Daten auf null überprüfen und ggf. mit leerem String ersetzen --
          candidateFirstName = (candidateFirstName == null || candidateFirstName.equals("null") ? "" : candidateFirstName);
@@ -183,8 +185,10 @@ public class TokenRequestController {
          einsatzort = (einsatzort == null || einsatzort.equals("null") ? "" : einsatzort);
          candidateEmail = (candidateEmail == null || candidateEmail.equals("null") ? "" : candidateEmail);
          ownerEmail = (ownerEmail == null || ownerEmail.equals("null") ? "" : ownerEmail);
+        clientContactFirstName = (clientContactFirstName == null || clientContactFirstName.equals("null") ? "" : clientContactFirstName);
+        clientContactLastName = (clientContactLastName == null || clientContactLastName.equals("null") ? "" : clientContactLastName);
 
-        return List.of(candidateFirstName, candidatelastName, candidateGesellschaft, zahlungszielPP, zahlungszielKunde, vergutungsart, ek, vk, aufgabenbeschreibung, ownerFirstName, ownerLastName, dateBegin, dateEnd, ppPosition, corporateName, corporateAddressStreet, corporateAddressNr, corporateAddressCity, corporateAddressZip, kundigungsfristPP, kundigungsfristKunde, einsatzort, candidateEmail, ownerEmail);
+        return List.of(candidateFirstName, candidatelastName, candidateGesellschaft, zahlungszielPP, zahlungszielKunde, vergutungsart, ek, vk, aufgabenbeschreibung, ownerFirstName, ownerLastName, dateBegin, dateEnd, ppPosition, corporateName, corporateAddressStreet, corporateAddressNr, corporateAddressCity, corporateAddressZip, kundigungsfristPP, kundigungsfristKunde, einsatzort, candidateEmail, ownerEmail, clientContactFirstName, clientContactLastName);
     }
 
 
@@ -317,6 +321,25 @@ public class TokenRequestController {
             JsonNode jsonNode = objectMapper.readTree(JsonResponse);
 
             JsonNode valueNode = jsonNode.path("data").path("jobOrder").path(fieldName);
+            if (valueNode.isMissingNode()) {
+
+                return null;
+            }
+
+            return valueNode.asText();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+    public String extractClientContact(String JsonResponse, String fieldName) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(JsonResponse);
+
+            JsonNode valueNode = jsonNode.path("data").path("jobOrder").path("clientContact").path(fieldName);
             if (valueNode.isMissingNode()) {
 
                 return null;
