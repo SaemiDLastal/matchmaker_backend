@@ -122,8 +122,6 @@ public class TokenRequestController {
     }
 
     // ------- Datenabfragen -------
-
-//TODO Ansprechpartner Kunde fehlt noch
     public List<String> getPlacementData(String bhRestToken) {
 
         RestTemplate restTemplate = new RestTemplate();
